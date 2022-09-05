@@ -1,0 +1,34 @@
+trigger: none
+
+pool:
+ name: my_mac
+
+steps:
+- task:  PowerShell@2
+  displayName: Docker Pull & Run  
+  inputs:
+    targetType: 'inline'
+    script: 'docker network create web_server --driver bridge && docker pull $(webapi) && docker run -d --name webapi --network web_server -p 8080:80 $(webapi)' 
+
+- task: PowerShell@2
+  displayName: Web Request
+  inputs:
+    filePath: '$(Build.SourcesDirectory)/script_1.ps1'
+    
+- task: Docker@2
+  displayName: build mariaDB dockerfile
+  inputs:
+    command: 'build'
+    Dockerfile: '$(Build.SourcesDirectory)/dockerfile'
+    arguments: '-t mydbcontainer --build-arg SQL_PASSWORD=$(sql_password)'
+
+- task:  PowerShell@2
+  displayName: Docker Run mariadb  
+  inputs:
+    targetType: 'inline'
+    script: 'docker run -d --name mariadb --network web_server -p 3306:3306 mydbcontainer' 
+
+
+
+
+
